@@ -33,23 +33,28 @@ optional idle timer do it for you.
 
 Requires DeepSeek Harness 0.2.1 (developed and tested against `0.2.1` on macOS) and Node 22+.
 
-```sh
-npm install -g @s0meb0dy3/dsh-scratch-workspace
-dsh plugin --profile <your-profile> install @s0meb0dy3/dsh-scratch-workspace
+**Desktop / Web:** Settings → Plugins → install, and paste the package name:
+
+```
+@s0meb0dy3/dsh-scratch-workspace
 ```
 
-Or install from a checkout:
+Then restart the app (client plugins load at page start).
+
+**From a checkout** (development):
 
 ```sh
 git clone https://github.com/s0meb0dy3/dsh-scratch-workspace.git
 cd dsh-scratch-workspace
-npm install
-node build.mjs
-dsh plugin --profile <your-profile> install "$PWD"
+npm install        # dev dependency: esbuild
+npm run build      # regenerate host.js
+npm test
 ```
 
-Then restart the app (client plugins load at page start) and open **Temporary
-workspaces** in the left sidebar. The plugin icon is a folder with a clock.
+Install that directory through the same Plugins flow by pointing at the local path.
+
+After loading, open **Temporary workspaces** in the left sidebar. The plugin icon is
+a folder with a clock.
 
 ## How it behaves
 
