@@ -1,0 +1,3 @@
+- insert:
+    - id: local-scratch-workspace
+      name: '@s0meb0dy3/dsh-scratch-workspace'
