@@ -1,6 +1,6 @@
 {
   "name": "@s0meb0dy3/dsh-scratch-workspace",
-  "version": "1.6.0",
+  "version": "1.6.1",
   "type": "module",
   "description": "Temporary DSH workspaces: one-click creation, a management panel with idle countdown and folder size, and safe cleanup with optional idle auto-expiry.",
   "license": "MIT",
@@ -36,8 +36,9 @@
   ],
   "scripts": {
     "build": "node build.mjs",
+    "build:check": "node build.mjs --check",
     "test": "node --test *.test.js",
-    "prepublishOnly": "node build.mjs && node --test *.test.js"
+    "prepublishOnly": "node build.mjs --check && node --test *.test.js"
   },
   "devDependencies": {
     "esbuild": "^0.28.2"
