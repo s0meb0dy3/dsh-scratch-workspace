@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: test (${{ matrix.os }}, node ${{ matrix.node }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, ubuntu-latest, windows-latest]
+        node: [22, 24]
+        include:
+          - os: windows-latest
+            experimental: true
+    continue-on-error: ${{ matrix.experimental == true }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+
+      - run: npm ci
+
+      # The committed host.js must never lag behind its sources.
+      - run: npm run build:check
+
+      - run: npm test
+
+      # Prove the published tarball carries every runtime file.
+      - name: Verify package contents
+        shell: bash
+        run: |
+          npm pack --dry-run 2>&1 | tee pack.log
+          for f in host.js client.js service.js core.js activity.js user-api.js index.js cordis.patch.yml icon.svg locale/en.json locale/zh.json LICENSE README.md; do
+            grep -q "package/$f\|$f" pack.log || { echo "missing from tarball: $f"; exit 1; }
+          done
+          if grep -q "\.test\.js" pack.log; then echo "tests must not be published"; exit 1; fi

@@ -127,6 +127,20 @@ npm test          # node --test; 70 tests over real filesystem behaviour
 
 `host.js` is generated. `client.js` is a plain module-loader bundle (no build step).
 
+
+## Releasing
+
+Publishing is automated: push a version tag and GitHub Actions publishes through npm
+Trusted Publishing (OIDC), with no tokens stored anywhere.
+
+```sh
+npm version patch          # or minor / major
+git push --follow-tags
+```
+
+The release workflow checks that the tag matches `package.json`, verifies `host.js` is
+fresh, runs the tests, then publishes with provenance.
+
 ## License
 
 MIT © 2026 s0meb0dy3

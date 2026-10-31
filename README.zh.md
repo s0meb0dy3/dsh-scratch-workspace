@@ -104,6 +104,20 @@ npm test          # node --test；70 项基于真实文件系统的测试
 
 `host.js` 是构建产物；`client.js` 是纯 module-loader 包，无需构建。
 
+
+## 发版
+
+发布已自动化：推一个版本标签，GitHub Actions 通过 npm Trusted Publishing（OIDC）发布，
+仓库里不保存任何令牌。
+
+```sh
+npm version patch          # 或 minor / major
+git push --follow-tags
+```
+
+发布工作流会校验标签与 `package.json` 版本一致、确认 `host.js` 是最新的、跑完测试，
+然后带 provenance 发布。
+
 ## 许可证
 
 MIT © 2026 s0meb0dy3
