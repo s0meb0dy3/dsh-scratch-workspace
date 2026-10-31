@@ -257,7 +257,7 @@ window.__ModuleLoader__.load({
           tasks.length===0?h('div',{className:'scratch-empty'},h(Icon,{size:22}),h('p',{className:'scratch-muted'},t('managerEmpty')),h('button',{type:'button',className:'scratch-primary',onClick:()=>launch()},`＋ ${t('start')}`)):
             h('div',{className:'scratch-list'},tasks.map(task=>h('article',{key:task.id,className:'scratch-item'},
               h('header',{className:'scratch-item-head'},
-                h('div',{className:'scratch-item-title'},h(Icon,{size:15}),h('span',null,friendlyName(t,task)),StateChip({state:states[task.id]?.state,t})),
+                h('div',{className:'scratch-item-title'},h(Icon,{size:15}),h('span',null,friendlyName(t,task.path)),StateChip({state:states[task.id]?.state,t})),
                 h('div',{className:'scratch-item-actions'},
                   h('button',{type:'button',className:'scratch-quiet',title:task.path,onClick:async e=>{const button=e.currentTarget;button.disabled=true;try{await raw('reveal',{id:task.id});}catch(err){setDialog({kind:'error',message:err.message,trigger:button});}finally{button.disabled=false;}}},t('reveal')),
                   task.sessionId&&h('button',{type:'button',className:'scratch-quiet',onClick:()=>ctx.uiWorkspace.openSession(task.sessionId)},t('open')),

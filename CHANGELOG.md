@@ -6,6 +6,14 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [1.6.4] - 2026-10-31
+
+### Added
+- Screenshot in both READMEs, and a trimmed README that links to new docs:
+  `docs/configuration.md`, `docs/security.md`, `docs/platforms.md`, `CONTRIBUTING.md`.
+
+### Fixed
+- The workspace card showed `[object Object]` instead of the friendly task name.
 ## [1.6.3] - 2026-10-31
 
 ### Changed

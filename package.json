@@ -1,6 +1,6 @@
 {
   "name": "@s0meb0dy3/dsh-scratch-workspace",
-  "version": "1.6.3",
+  "version": "1.6.4",
   "type": "module",
   "description": "Temporary DSH workspaces: one-click creation, a management panel with idle countdown and folder size, and safe cleanup with optional idle auto-expiry.",
   "license": "MIT",

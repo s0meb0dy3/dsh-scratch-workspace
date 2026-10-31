@@ -5,141 +5,52 @@
 
 English | [中文](README.zh.md)
 
-One-click temporary workspaces for [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness):
-create a throwaway folder with its own workspace and session, manage every running
-one from a sidebar panel, and delete the files safely when you are done — or let an
-optional idle timer do it for you.
+Throwaway workspaces for [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness):
+one click to create a folder with its own workspace and session, one panel to manage
+every running one, and safe deletion when you are done — or an idle timer that does it
+for you.
+
+![Temporary workspaces panel](docs/images/panel.webp)
 
 > [!WARNING]
-> Cleanup **permanently deletes the folder and everything inside it**. Files do not go
-> to the Trash, and there is no undo. The conversation is retained and archived.
+> Cleanup **permanently deletes the folder and everything inside it** — not the Trash,
+> no undo. The conversation is kept and archived.
 
-## Features
-
-- **One entry, two jobs** — the sidebar **Temporary workspaces** panel is the only
-  place: `＋ Temporary task` creates, the list below manages.
-- **Per-workspace cards** — friendly name (`task · 10-30 14:17`), live state
-  (running / terminal open / unable to check), idle countdown, folder size, and the
-  session titles inside that workspace (click to jump).
-- **Safe cleanup** — verifies the folder is still the one the plugin created
-  (canonical path, parent/task inode, ownership marker), writes a durable deletion
-  authorization first, and can resume a partially failed delete after restart.
-- **Idle auto-expiry** — off by default; 1–8760 hours. New tasks only: a task fixes
-  its policy at creation, so changing settings never deletes older work by surprise.
-- **Never fights the app** — cleanup is refused while the agent is running or a
-  terminal is attached; the list shows that state before you click.
-- **Settings vs. panel** — settings hold configuration only; the panel holds running
-  workspaces.
+<!-- Demo video: replace the line below with an embedded video or GIF when it is ready. -->
+<!-- 🎬 Demo video — coming soon -->
 
 ## Install
 
-Requires DeepSeek Harness 0.2.1 (developed and tested against `0.2.1` on macOS) and Node 22+.
+1. In DeepSeek Harness, open **Plugins** in the sidebar → **Install**.
+2. Paste the package name:
 
-**Desktop / Web:** Settings → Plugins → install, and paste the package name:
+   ```
+   @s0meb0dy3/dsh-scratch-workspace
+   ```
 
-```
-@s0meb0dy3/dsh-scratch-workspace
-```
+3. Quit DeepSeek Harness completely and reopen it, then open **Temporary workspaces**
+   in the sidebar.
 
-Then restart the app (client plugins load at page start).
+Requires DeepSeek Harness 0.2.1 or newer.
 
-**From a checkout** (development):
+## What you get
 
-```sh
-git clone https://github.com/s0meb0dy3/dsh-scratch-workspace.git
-cd dsh-scratch-workspace
-npm install        # dev dependency: esbuild
-npm run build      # regenerate host.js
-npm test
-```
+- **One entry, two jobs** — the sidebar panel creates (`＋ Temporary task`) and manages
+  (list, open, clean up) in the same place.
+- **Every task at a glance** — friendly name, live state (running / terminal open),
+  idle countdown, folder size, and the sessions inside it.
+- **Safe deletion** — ownership and inode checks, a durable retry journal, and refusal
+  while the agent or a terminal is still using the folder.
+- **Optional idle expiry** — off by default; when on, it applies to new tasks only.
 
-Install that directory through the same Plugins flow by pointing at the local path.
+## Docs
 
-After loading, open **Temporary workspaces** in the left sidebar. The plugin icon is
-a folder with a clock.
-
-## How it behaves
-
-1. Click `＋ Temporary task` → a folder is created under your configured root, a
-   workspace is registered, and a session is opened for you.
-2. Work as usual. The card shows the idle countdown, folder size and sessions.
-3. Click `清理` (Clean up) → confirm → the folder is deleted, the workspace
-   registration is removed, and the conversation is archived.
-4. Forget to clean up and auto-expiry is on → the same cleanup runs when idle.
-
-Cleanup is refused when the agent is running or a terminal is attached to that
-folder; the state chip tells you before you click.
-
-## Configuration
-
-Settings → Temporary workspaces (or the plugin's own page):
-
-| Setting | Default | Meaning |
-|---|---|---|
-| Storage root | unset (asked on first use) | Where temporary folders are created |
-| Folder prefix | `task` | Name prefix, 1–40 word characters |
-| Confirm before deletion | on | Ask before deleting manually |
-| Automatic cleanup | off | Idle expiry for **new** tasks |
-| Idle hours | 24 | 1–8760 hours |
-
-Auto-expiry requires an explicit confirmation when enabled or when changing the
-hours of an already-enabled policy.
-
-## What stays, what goes
-
-| After cleanup | |
+| | |
 |---|---|
-| Task folder and all files | **deleted permanently** |
-| Workspace registration | removed |
-| Conversation history | kept and archived (file links stop working) |
-| Plugin record | kept as `completed`, so the session cannot run again |
-
-DSH's own **Delete workspace** only removes the registration and keeps files on
-disk — use this plugin's panel (or auto-expiry) when you actually want the files gone.
-
-## Platform support
-
-- **macOS**: tested end to end (create, manage, cleanup, auto-expiry).
-- **Windows**: not verified. Known risks: `O_NOFOLLOW` is POSIX-only, `ino`
-  semantics differ, reserved filenames and case-insensitive paths are not handled.
-  Expect to fix those before relying on it.
-- **Linux**: not verified, expected to work like macOS.
-
-## Security model
-
-- Cleanup only ever targets a **registered direct child** of a configured root, and
-  re-verifies canonical path, inode pair and an ownership marker before `rm`.
-- A durable authorization is written before the first deletion, so a crash mid-way is
-  recoverable instead of leaving an unclearable folder.
-- Child symlinks are unlinked, never traversed.
-- Completion, auto-cleanup consent and the delete confirmation are **user-only**; the
-  agent tool can only read state, configure root/prefix, and create tasks.
-- Not an OS sandbox: path-based Node APIs keep a residual TOCTOU window, and one DSH
-  process per profile is assumed.
-
-## Development
-
-```sh
-npm install
-npm run build     # bundle host sources into host.js
-npm test          # node --test; 70 tests over real filesystem behaviour
-```
-
-`host.js` is generated. `client.js` is a plain module-loader bundle (no build step).
-
-
-## Releasing
-
-Publishing is automated: push a version tag and GitHub Actions publishes through npm
-Trusted Publishing (OIDC), with no tokens stored anywhere.
-
-```sh
-npm version patch          # or minor / major
-git push --follow-tags
-```
-
-The release workflow checks that the tag matches `package.json`, verifies `host.js` is
-fresh, runs the tests, then publishes with provenance.
+| [Configuration](docs/configuration.md) | Root folder, prefix, confirmation, idle hours |
+| [Security model](docs/security.md) | What deletion verifies, and what it does not protect |
+| [Platforms](docs/platforms.md) | macOS verified; Windows caveats |
+| [Contributing](CONTRIBUTING.md) | Development, tests, release process |
 
 ## License
 
