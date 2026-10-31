@@ -3,6 +3,8 @@
 [![npm](https://img.shields.io/npm/v/@s0meb0dy3/dsh-scratch-workspace)](https://www.npmjs.com/package/@s0meb0dy3/dsh-scratch-workspace)
 [![license](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
+English | [中文](README.zh.md)
+
 One-click temporary workspaces for [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness):
 create a throwaway folder with its own workspace and session, manage every running
 one from a sidebar panel, and delete the files safely when you are done — or let an
