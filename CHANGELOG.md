@@ -6,6 +6,12 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [1.6.3] - 2026-10-31
+
+### Changed
+- Releases are published by GitHub Actions through npm Trusted Publishing (OIDC);
+  no tokens are stored anywhere. This release validates that configuration.
+
 ## [1.6.2] - 2026-10-31
 
 ### Added
