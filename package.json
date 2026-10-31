@@ -22,6 +22,7 @@
   },
   "files": [
     "host.js",
+    "build.lock.json",
     "index.js",
     "service.js",
     "core.js",
