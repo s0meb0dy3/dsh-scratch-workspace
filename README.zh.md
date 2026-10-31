@@ -2,6 +2,7 @@
 
 [![npm](https://img.shields.io/npm/v/@s0meb0dy3/dsh-scratch-workspace)](https://www.npmjs.com/package/@s0meb0dy3/dsh-scratch-workspace)
 [![license](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+[![CI](https://github.com/s0meb0dy3/dsh-scratch-workspace/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/s0meb0dy3/dsh-scratch-workspace/actions/workflows/ci.yml)
 
 [English](README.md) | 中文
 
