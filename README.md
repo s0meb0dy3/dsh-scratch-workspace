@@ -12,9 +12,10 @@ for you.
 
 ![Temporary workspaces panel](docs/images/panel.webp)
 
-> [!WARNING]
-> Cleanup **permanently deletes the folder and everything inside it** — not the Trash,
-> no undo. The conversation is kept and archived.
+> [!NOTE]
+> Cleanup moves the folder to your system **Trash / Recycle Bin**, so a mistake is
+> recoverable there. The conversation is kept and archived. Empty Trash when you are
+> sure you no longer need it.
 
 <!-- Demo video: replace the line below with an embedded video or GIF when it is ready. -->
 <!-- 🎬 Demo video — coming soon -->

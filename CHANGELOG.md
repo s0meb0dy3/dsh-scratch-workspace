@@ -6,6 +6,18 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [1.7.0] - 2026-11-01
+
+### Changed
+- **Cleanup now moves the task folder to the system Trash / Recycle Bin instead of
+  deleting it permanently** (macOS `~/.Trash`, Windows Recycle Bin, Linux `gio trash`).
+  A failed trash move is reported as an error and never downgraded to permanent
+  deletion. `DSH_SCRATCH_TRASH_DIR` redirects the destination.
+- Confirmation dialog, both READMEs and the security docs describe the new behaviour.
+
+### Added
+- Three tests covering trash placement, trash failure (nothing deleted) and
+  same-name collisions.
 ## [1.6.4] - 2026-10-31
 
 ### Added

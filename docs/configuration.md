@@ -34,6 +34,9 @@ per-task prompt.
 
 ## Data location
 
+Task folders removed by cleanup go to the system Trash / Recycle Bin, so disk space is
+reclaimed only when you empty it. Set `DSH_SCRATCH_TRASH_DIR` to send them elsewhere.
+
 Plugin state (settings, task registry, deletion authorizations):
 
 ```

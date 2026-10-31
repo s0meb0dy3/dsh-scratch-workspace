@@ -1,7 +1,21 @@
 # Security model
 
-This plugin deletes files, so its guarantees matter. Here is exactly what it does —
+This plugin removes folders, so its guarantees matter. Here is exactly what it does —
 and what it deliberately does not protect against.
+
+## Where the files go
+
+Cleanup moves the task folder into the platform trash instead of deleting it:
+
+| Platform | Mechanism |
+|---|---|
+| macOS | `rename` into `~/.Trash` (same volume required) |
+| Windows | Recycle Bin via `Microsoft.VisualBasic.FileIO.FileSystem` |
+| Linux | `gio trash` |
+
+If the platform provides no usable trash, cleanup **fails and reports an error**; it
+never silently downgrades to permanent deletion. `DSH_SCRATCH_TRASH_DIR` redirects the
+destination (used by the test suite, and useful if you want trash on another disk).
 
 ## What cleanup verifies
 

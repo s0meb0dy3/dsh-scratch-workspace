@@ -18,6 +18,7 @@ async function fixture(run) {
   assert.ok(path.isAbsolute(base));
   assert.equal(path.dirname(base), tempRoot);
   assert.match(path.basename(base), /^dsh-scratch-core-test-/);
+  process.env.DSH_SCRATCH_TRASH_DIR = path.join(base, 'trash');
   function intended(target, allowBase = false) {
     assert.ok(path.isAbsolute(target), 'mutation target must be absolute');
     assert.equal(path.resolve(target), target);
@@ -534,3 +535,48 @@ test('initialization rejects tasks.json symlink without reading its target', asy
     assert.equal(JSON.parse(await fs.readFile(backup, 'utf8')).settings.directoryPrefix, 'original');
   });
 });
+
+test('cleanup moves the task folder into the trash instead of deleting it', () => fixture(async ({ store, root, base }) => {
+  await store.saveSettings({ rootDirectory: root });
+  const record = await store.createDirectory({ atMs: Date.UTC(2026, 0, 2, 3, 4, 5) });
+  await fs.writeFile(path.join(record.path, 'result.txt'), 'keep me');
+  await store.removeDirectory(record.id);
+
+  await assert.rejects(fs.stat(record.path), { code: 'ENOENT' });
+  const trashed = path.join(base, 'trash', path.basename(record.path));
+  assert.equal(await fs.readFile(path.join(trashed, 'result.txt'), 'utf8'), 'keep me');
+  assert.equal((await store.get(record.id)).phase, 'files-deleted');
+}));
+
+test('a trashing failure is reported and deletes nothing', () => fixture(async ({ stateDir, root }) => {
+  const failing = new ScratchStore({
+    stateDir,
+    trash: async () => { throw new Error('trash unavailable'); },
+  });
+  await failing.init();
+  await failing.saveSettings({ rootDirectory: root });
+  const record = await failing.createDirectory({ atMs: Date.UTC(2026, 0, 2, 3, 4, 6) });
+  await fs.writeFile(path.join(record.path, 'result.txt'), 'still here');
+
+  await assert.rejects(failing.removeDirectory(record.id), /trash unavailable/);
+  assert.equal(await fs.readFile(path.join(record.path, 'result.txt'), 'utf8'), 'still here');
+  assert.equal((await failing.get(record.id)).phase, 'created');
+}));
+
+test('the same folder name can be trashed twice without overwriting', () => fixture(async ({ base }) => {
+  const { moveToTrash } = await import('./trash.js');
+  const make = async parent => {
+    const dir = path.join(base, parent, 'same');
+    await fs.mkdir(dir, { recursive: true });
+    await fs.writeFile(path.join(dir, 'who.txt'), parent);
+    return dir;
+  };
+  const first = await moveToTrash(await make('one'));
+  const second = await moveToTrash(await make('two'));
+
+  assert.equal(path.dirname(first.location), path.join(base, 'trash'));
+  assert.equal(path.basename(first.location), 'same');
+  assert.equal(path.basename(second.location), 'same 2');
+  assert.equal(await fs.readFile(path.join(first.location, 'who.txt'), 'utf8'), 'one');
+  assert.equal(await fs.readFile(path.join(second.location, 'who.txt'), 'utf8'), 'two');
+}));

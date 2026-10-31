@@ -25,7 +25,8 @@ picked up by the client module HMR.
 |---|---|
 | `index.js` | Host entry: services, RPC channel, agent tool, event wiring, scheduler |
 | `service.js` | Task lifecycle: create, cleanup, idle sweep, activity tracking |
-| `core.js` | Filesystem ownership: creation, verification, deletion, persistence |
+| `core.js` | Filesystem ownership: creation, verification, cleanup, persistence |
+| `trash.js` | Platform trashing: `~/.Trash`, Windows Recycle Bin, `gio trash` |
 | `activity.js` | Recover last activity from the session log |
 | `user-api.js` | Authenticated user-only operation dispatch |
 | `client.js` | Sidebar panel, settings page, dialogs (module-loader bundle, no build) |
@@ -46,7 +47,8 @@ published. **Run `npm run build` after every host change.**
 ## Tests
 
 `npm test` runs `node --test`. The suite uses real temporary directories (never mocks
-the filesystem) and covers ownership checks, symlink attacks, partial-deletion
+the filesystem) and redirects trashing through `DSH_SCRATCH_TRASH_DIR` so a test run
+never touches your real Trash and covers ownership checks, symlink attacks, partial-deletion
 recovery, idle boundaries, busy/terminal skips, restart recovery and the user-only
 authorization boundary.
 

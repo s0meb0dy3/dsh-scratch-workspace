@@ -7,7 +7,7 @@ import {ScratchStore} from './core.js';
 import {ScratchService} from './service.js';
 const HOUR=3600000;
 async function fixture(fn) {
-  const base=await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(),'dsh-scratch-auto-')));
+  const base=await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(),'dsh-scratch-auto-')));process.env.DSH_SCRATCH_TRASH_DIR=path.join(base,'trash');
   const stateDir=path.join(base,'state'),root=path.join(base,'root');
   let now=Date.parse('2026-10-29T00:00:00.000Z'),counter=0,failDelete=false,activityHook;
   const live=new Map(),headers=new Map(),workspaces=new Map(),busy=new Set(),terminalRows=new Map(),archived=new Set();

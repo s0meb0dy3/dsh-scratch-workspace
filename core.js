@@ -3,6 +3,7 @@ import { constants } from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
 import { randomBytes, randomUUID } from 'node:crypto';
+import { moveToTrash } from './trash.js';
 
 const DEFAULT_SETTINGS = Object.freeze({ rootDirectory: '', directoryPrefix: 'task', confirmDelete: true, autoCleanupEnabled: false, idleHours: 24 });
 const isoTime = value => typeof value === 'string' && Number.isFinite(Date.parse(value)) && new Date(value).toISOString() === value;
@@ -74,8 +75,9 @@ function recordShape(record) {
  * This is not a security boundary against processes that can mutate these paths.
  */
 export class ScratchStore {
-  constructor({ stateDir } = {}) {
+  constructor({ stateDir, trash = moveToTrash } = {}) {
     this._stateDir = absolute(stateDir, 'stateDir');
+    this._trash = trash;
     this._state = null;
     this._queue = Promise.resolve();
   }
@@ -335,9 +337,10 @@ export class ScratchStore {
       // validation/authorization I/O but before recursive deletion begins.
       beforeRemove?.();
       // Intended absolute direct-child path + root/task identities and durable
-      // authorization verified immediately before rm. Child symlinks are not
-      // traversed; the residual concurrent TOCTOU limitation still applies.
-      await fs.rm(record.path, { recursive: true, force: false });
+      // authorization verified immediately before the move. The folder goes to
+      // the platform trash; a failure here is reported, never downgraded to a
+      // permanent delete. The residual concurrent TOCTOU limitation still applies.
+      await this._trash(record.path);
     }
   }
 

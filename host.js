@@ -1,14 +1,81 @@
 // index.js
-import path4 from "node:path";
-import os2 from "node:os";
+import path5 from "node:path";
+import os3 from "node:os";
 import { createHash } from "node:crypto";
 
 // core.js
 import * as fs from "node:fs/promises";
-import { constants } from "node:fs";
-import path from "node:path";
-import os from "node:os";
+import { constants as constants2 } from "node:fs";
+import path2 from "node:path";
+import os2 from "node:os";
 import { randomBytes, randomUUID } from "node:crypto";
+
+// trash.js
+import { access, mkdir, rename } from "node:fs/promises";
+import { constants } from "node:fs";
+import os from "node:os";
+import path from "node:path";
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
+var run = promisify(execFile);
+async function moveToTrash(target) {
+  const override = process.env.DSH_SCRATCH_TRASH_DIR;
+  if (override) return moveInto(override, target);
+  if (process.platform === "darwin") {
+    return moveInto(path.join(os.homedir(), ".Trash"), target);
+  }
+  if (process.platform === "win32") {
+    return recycleOnWindows(target);
+  }
+  return trashWithGio(target);
+}
+async function moveInto(directory, target) {
+  await mkdir(directory, { recursive: true });
+  const finalPath = await uniquePath(directory, path.basename(target));
+  try {
+    await rename(target, finalPath);
+  } catch (error) {
+    if (error.code === "EXDEV") {
+      throw new Error(
+        `\u4E34\u65F6\u76EE\u5F55\u4E0E\u5E9F\u7EB8\u7BD3\u4E0D\u5728\u540C\u4E00\u78C1\u76D8\uFF0C\u65E0\u6CD5\u79FB\u5165\u5E9F\u7EB8\u7BD3\uFF1A${target}\u3002\u8BF7\u5148\u628A\u5B58\u653E\u4F4D\u7F6E\u6539\u5230\u540C\u4E00\u78C1\u76D8\uFF0C\u6216\u624B\u52A8\u5904\u7406\u8BE5\u76EE\u5F55\u3002`
+      );
+    }
+    throw error;
+  }
+  return { trashed: true, location: finalPath };
+}
+async function uniquePath(directory, name) {
+  const exists = async (value) => access(value, constants.F_OK).then(() => true, () => false);
+  let candidate = path.join(directory, name);
+  let index = 2;
+  while (await exists(candidate)) {
+    candidate = path.join(directory, `${name} ${index}`);
+    index += 1;
+  }
+  return candidate;
+}
+async function recycleOnWindows(target) {
+  const script = [
+    "Add-Type -AssemblyName Microsoft.VisualBasic;",
+    `[Microsoft.VisualBasic.FileIO.FileSystem]::DeleteDirectory('${target.replace(/'/g, "''")}',`,
+    "'OnlyErrorDialogs', 'SendToRecycleBin')"
+  ].join(" ");
+  await run("powershell.exe", ["-NoProfile", "-NonInteractive", "-Command", script], { windowsHide: true });
+  return { trashed: true, location: null };
+}
+async function trashWithGio(target) {
+  try {
+    await run("gio", ["trash", "--", target]);
+    return { trashed: true, location: null };
+  } catch (error) {
+    if (error.code === "ENOENT") {
+      throw new Error("\u6B64\u7CFB\u7EDF\u6CA1\u6709\u53EF\u7528\u7684\u56DE\u6536\u7AD9\u5DE5\u5177\uFF08gio\uFF09\u3002\u8BF7\u5B89\u88C5 glib2 \u7684 gio\uFF0C\u6216\u624B\u52A8\u5904\u7406\u8BE5\u76EE\u5F55\u3002");
+    }
+    throw error;
+  }
+}
+
+// core.js
 var DEFAULT_SETTINGS = Object.freeze({ rootDirectory: "", directoryPrefix: "task", confirmDelete: true, autoCleanupEnabled: false, idleHours: 24 });
 var isoTime = (value) => typeof value === "string" && Number.isFinite(Date.parse(value)) && new Date(value).toISOString() === value;
 function cleanupPolicy(value) {
@@ -30,9 +97,9 @@ function fail(message, code = "ERR_SCRATCH_UNSAFE") {
 }
 function absolute(value, name) {
   if (typeof value !== "string" || !value || value.includes("\0")) fail(`${name} must be an absolute path`, "ERR_SCRATCH_VALIDATION");
-  const expanded = value.startsWith("~/") ? path.join(os.homedir(), value.slice(2)) : value;
-  if (!path.isAbsolute(expanded)) fail(`${name} must be an absolute path`, "ERR_SCRATCH_VALIDATION");
-  return path.resolve(expanded);
+  const expanded = value.startsWith("~/") ? path2.join(os2.homedir(), value.slice(2)) : value;
+  if (!path2.isAbsolute(expanded)) fail(`${name} must be an absolute path`, "ERR_SCRATCH_VALIDATION");
+  return path2.resolve(expanded);
 }
 function object(value, label) {
   if (!value || typeof value !== "object" || Array.isArray(value)) fail(`${label} must be an object`, "ERR_SCRATCH_VALIDATION");
@@ -56,7 +123,7 @@ function recordShape(record) {
   object(record, "record");
   if (!UUID.test(record.id)) fail("Invalid record id");
   if (absolute(record.rootDirectory, "record root") !== record.rootDirectory || absolute(record.path, "record path") !== record.path) fail("Record paths must be normalized absolute paths");
-  if (record.directoryName !== path.basename(record.path) || record.directoryName === "." || record.directoryName === ".." || path.dirname(record.path) !== record.rootDirectory || record.path === record.rootDirectory) fail("Task must be a direct child of its recorded root");
+  if (record.directoryName !== path2.basename(record.path) || record.directoryName === "." || record.directoryName === ".." || path2.dirname(record.path) !== record.rootDirectory || record.path === record.rootDirectory) fail("Task must be a direct child of its recorded root");
   for (const key of ["rootDev", "rootIno", "dev", "ino", "markerDev", "markerIno"]) {
     if (typeof record[key] !== "string" || !/^\d+$/.test(record[key])) fail(`Invalid record identity: ${key}`);
   }
@@ -67,8 +134,9 @@ function recordShape(record) {
   if (record.cleanupRetryAt != null && !isoTime(record.cleanupRetryAt)) fail("Invalid cleanupRetryAt");
 }
 var ScratchStore = class {
-  constructor({ stateDir } = {}) {
+  constructor({ stateDir, trash = moveToTrash } = {}) {
     this._stateDir = absolute(stateDir, "stateDir");
+    this._trash = trash;
     this._state = null;
     this._queue = Promise.resolve();
   }
@@ -87,7 +155,7 @@ var ScratchStore = class {
     this._stateIdentity = identity(stat2);
     let state;
     try {
-      const file = await fs.open(path.join(this._stateDir, "tasks.json"), constants.O_RDONLY | constants.O_NOFOLLOW);
+      const file = await fs.open(path2.join(this._stateDir, "tasks.json"), constants2.O_RDONLY | constants2.O_NOFOLLOW);
       try {
         const info = await file.stat();
         if (!info.isFile()) fail("tasks.json must be a regular file");
@@ -152,11 +220,11 @@ var ScratchStore = class {
   // before each unlink or rename. Never operate on caller-derived loose paths.
   async _assertStatePaths(temp, destination) {
     await this._assertStateDirectory();
-    if (!path.isAbsolute(temp) || path.dirname(temp) !== this._stateDir || !/^\.tasks-[a-f0-9-]+\.tmp$/.test(path.basename(temp)) || destination !== path.join(this._stateDir, "tasks.json") || !path.isAbsolute(destination)) fail("Invalid atomic state write paths");
+    if (!path2.isAbsolute(temp) || path2.dirname(temp) !== this._stateDir || !/^\.tasks-[a-f0-9-]+\.tmp$/.test(path2.basename(temp)) || destination !== path2.join(this._stateDir, "tasks.json") || !path2.isAbsolute(destination)) fail("Invalid atomic state write paths");
   }
   async _persist(next) {
-    const destination = path.join(this._stateDir, "tasks.json");
-    const temp = path.join(this._stateDir, `.tasks-${randomUUID()}.tmp`);
+    const destination = path2.join(this._stateDir, "tasks.json");
+    const temp = path2.join(this._stateDir, `.tasks-${randomUUID()}.tmp`);
     await this._assertStatePaths(temp, destination);
     let created = false;
     let tempIdentity;
@@ -235,10 +303,10 @@ var ScratchStore = class {
   }
   async _assertOwned(record, allowMissing = false) {
     if (!await this._assertTask(record, allowMissing)) return false;
-    const markerPath = path.join(record.path, MARKER);
+    const markerPath = path2.join(record.path, MARKER);
     const stat2 = await fs.lstat(markerPath, { bigint: true });
     if (!stat2.isFile() || stat2.isSymbolicLink() || !sameIdentity(stat2, record.markerDev, record.markerIno)) fail("Ownership marker was replaced");
-    const handle = await fs.open(markerPath, constants.O_RDONLY | constants.O_NOFOLLOW);
+    const handle = await fs.open(markerPath, constants2.O_RDONLY | constants2.O_NOFOLLOW);
     try {
       const opened = await handle.stat({ bigint: true });
       if (!opened.isFile() || !sameIdentity(opened, record.markerDev, record.markerIno) || opened.size > 16384n) fail("Unsafe ownership marker");
@@ -260,8 +328,8 @@ var ScratchStore = class {
       const id = randomUUID();
       const date = (/* @__PURE__ */ new Date()).toISOString().replace(/[-:]/g, "").replace(/\..*$/, "").replace("T", "-");
       const directoryName = `${directoryPrefix}-${date}-${id}`;
-      const directory = path.join(root.canonical, directoryName);
-      if (!path.isAbsolute(directory) || path.dirname(directory) !== root.canonical || directory === root.canonical) fail("Invalid task creation path");
+      const directory = path2.join(root.canonical, directoryName);
+      if (!path2.isAbsolute(directory) || path2.dirname(directory) !== root.canonical || directory === root.canonical) fail("Invalid task creation path");
       await fs.mkdir(directory, { mode: 448 });
       const info = await fs.lstat(directory, { bigint: true });
       const now = new Date(atMs).toISOString();
@@ -288,7 +356,7 @@ var ScratchStore = class {
       let markerReady = false;
       try {
         await this._assertTask(record);
-        const handle = await fs.open(path.join(directory, MARKER), "wx", 384);
+        const handle = await fs.open(path2.join(directory, MARKER), "wx", 384);
         try {
           await handle.writeFile(`${JSON.stringify({ version: 1, id, token: record.markerToken })}
 `);
@@ -343,7 +411,7 @@ var ScratchStore = class {
     if (!authorization || authorization.binding !== deletionBinding(record)) fail("Missing persisted deletion authorization");
     if (!await this._assertTask(record, true)) return false;
     try {
-      await fs.lstat(path.join(record.path, MARKER));
+      await fs.lstat(path2.join(record.path, MARKER));
     } catch (error) {
       if (!missing(error)) throw error;
       return this._assertTask(record);
@@ -353,7 +421,7 @@ var ScratchStore = class {
   async _removeAuthorizedDirectory(record, beforeRemove) {
     if (await this._assertAuthorizedRemoval(record)) {
       beforeRemove?.();
-      await fs.rm(record.path, { recursive: true, force: false });
+      await this._trash(record.path);
     }
   }
   removeDirectory(id, { beforeRemove, finalPhase = "files-deleted" } = {}) {
@@ -394,7 +462,7 @@ var ScratchStore = class {
 };
 
 // service.js
-import path2 from "node:path";
+import path3 from "node:path";
 import * as fs2 from "node:fs/promises";
 var AUTOMATIC = /* @__PURE__ */ Symbol("automatic-cleanup");
 var AUTO_PHASES = /* @__PURE__ */ new Set(["active", "auto-error", "auto-completing"]);
@@ -478,9 +546,9 @@ var ScratchService = class {
     return this;
   }
   contains(root, value) {
-    if (typeof value !== "string" || !path2.isAbsolute(value)) return false;
-    const rel = path2.relative(root, value);
-    return rel === "" || !rel.startsWith(`..${path2.sep}`) && rel !== ".." && !path2.isAbsolute(rel);
+    if (typeof value !== "string" || !path3.isAbsolute(value)) return false;
+    const rel = path3.relative(root, value);
+    return rel === "" || !rel.startsWith(`..${path3.sep}`) && rel !== ".." && !path3.isAbsolute(rel);
   }
   _belongs(record, sessionId) {
     if (record.sessionId === sessionId) return true;
@@ -556,7 +624,7 @@ var ScratchService = class {
         throw error;
       }
       for (const entry of entries) {
-        const target = path2.join(current, entry.name);
+        const target = path3.join(current, entry.name);
         if (entry.isSymbolicLink()) {
           files++;
           continue;
@@ -888,12 +956,12 @@ var ScratchService = class {
 };
 
 // activity.js
-import path3 from "node:path";
+import path4 from "node:path";
 var ACTIVITY_EVENTS = /* @__PURE__ */ new Set(["user/message", "turn/start", "turn/end", "tool/call", "tool/result", "assistant/message"]);
 var contains = (root, value) => {
   if (!value) return false;
-  const rel = path3.relative(root, value);
-  return rel === "" || !rel.startsWith(`..${path3.sep}`) && rel !== ".." && !path3.isAbsolute(rel);
+  const rel = path4.relative(root, value);
+  return rel === "" || !rel.startsWith(`..${path4.sep}`) && rel !== ".." && !path4.isAbsolute(rel);
 };
 async function restoreActivity(ctx, record) {
   let newest = Date.parse(record.lastActivityAt || record.createdAt);
@@ -987,7 +1055,7 @@ var inject = ["connection", "webServer", "workspaceRegistry", "sessionController
 async function apply(ctx) {
   const identity2 = process.env.DSH_PROFILE_DIR || process.env.DSH_PROFILE || "default";
   const hash = createHash("sha256").update(identity2).digest("hex").slice(0, 12);
-  const store = new ScratchStore({ stateDir: path4.join(os2.homedir(), ".local", "share", "deepseek-harness", "scratch-workspace", hash) });
+  const store = new ScratchStore({ stateDir: path5.join(os3.homedir(), ".local", "share", "deepseek-harness", "scratch-workspace", hash) });
   const service = await new ScratchService(ctx, store, { restoreActivity: (record) => restoreActivity(ctx, record) }).init();
   await service.refreshBlockedPaths();
   ctx.effect(() => ctx.provide("scratchWorkspace", service), "scratch-workspace: service");
